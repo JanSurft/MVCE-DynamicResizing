@@ -1,6 +1,6 @@
 # MVCE-DynamicResizing
 
-Serves as an MVCE for a stackoverflow question I was posting.
+Serves as an MVCE for a stackoverflow question I was posting. http://stackoverflow.com/questions/36112172/jung-how-to-place-arrowheads-correctly-with-dynamically-resizing-vertex-shapes
 
 Start the app with <code>-d</code> and it will resize the vertices dynamically.
 
