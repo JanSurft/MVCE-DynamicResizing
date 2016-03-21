@@ -7,24 +7,28 @@ import edu.uci.ics.jung.visualization.VisualizationViewer;
 import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
 import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
 import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.util.Duration;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JFrame;
+import java.awt.Color;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 
+/**
+ * \brief
+ * \details
+ * \date 21.03.16
+ *
+ * @author Jan Hermes
+ * @version 0.0.1
+ */
 public class Main {
 
-    public static double globalWorkLoad = 1;
+    // the global workload
+    private static double globalWorkLoad = 1;
 
     public static void main(String[] args) {
 	// write your code here
@@ -33,14 +37,20 @@ public class Main {
             throw new IllegalArgumentException("needs exactly 1 argument -d (for dynamic) or -s (for static)");
         }
 
+        // INitialize the graph, layout and the visualization of the graph
         final Graph<MyVertex, Integer> graph = new DirectedSparseGraph<>();
         final VisualizationViewer<MyVertex, Integer> viewer = new VisualizationViewer<>(new FRLayout<>(graph));
+
+        // All vertices will be stored in this list
         final List<MyVertex> vertices = new ArrayList<>();
 
+        // Create a graph mouse that lets you move around the vertices
         DefaultModalGraphMouse gm = new DefaultModalGraphMouse();
         gm.setMode(ModalGraphMouse.Mode.PICKING);
         viewer.setGraphMouse(gm);
 
+
+        // parse the command line and do dynamic or static
         if (args[0].equals("-d")) {
             viewer.getRenderContext().setVertexShapeTransformer(vertex -> {
 
@@ -53,10 +63,13 @@ public class Main {
             viewer.getRenderContext().setVertexShapeTransformer(vertex -> vertex.shape);
         }
 
+        // make the node transparend so you see if arrowhead are inside or not
+        viewer.getRenderContext().setVertexFillPaintTransformer(v -> new Color(0x00000000, true));
+
+        // label the vertices for info on workload
         viewer.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<>());
 
-
-
+        // create the starting layout
         for (int i = 0; i < 10; i+=2) {
             vertices.add(new MyVertex());
             vertices.add(new MyVertex());
@@ -65,15 +78,24 @@ public class Main {
             graph.addEdge(i, vertices.get(i), vertices.get(i+1));
         }
 
-        Random rand = new Random(500);
+        // init a pseudo random generator
+        final Random rand = new Random(500);
 
+        // service for manipulating workload and edges
         ExecutorService service = Executors.newSingleThreadExecutor();
         service.execute(() -> {
 
-            while (true) {
+            // This thread adds workloads to the vertices and updates the global worklaod accordingly
+            // also it repaints the view on every step
+            int nextID = 10;
+            while (!Thread.interrupted()) {
 
                 final Integer someValue = rand.nextInt(10);
                 vertices.get(someValue).workLoad += 1.0;
+
+                final int someValueDest = rand.nextInt(10);
+
+                graph.addEdge(nextID++, vertices.get(someValue), vertices.get(someValueDest));
 
                 if (vertices.get(someValue).workLoad > globalWorkLoad) {
                     globalWorkLoad = vertices.get(someValue).workLoad;
@@ -87,22 +109,7 @@ public class Main {
             }
         });
 
-/*        final Timeline timeline = new Timeline(new KeyFrame(Duration.millis(1000), event -> {
-
-            System.out.println("timline doing");
-            final Integer someValue = rand.nextInt(10);
-            vertices.get(someValue).workLoad += 1.0;
-
-            if (vertices.get(someValue).workLoad > globalWorkLoad) {
-                globalWorkLoad = vertices.get(someValue).workLoad;
-            }
-            viewer.repaint();
-        }));
-
-        timeline.setCycleCount(Animation.INDEFINITE);
-
-        timeline.play();*/
-
+        // Create jFrame for showing the visualization
         final JFrame frame = new JFrame();
         frame.add(viewer);
         frame.setVisible(true);
